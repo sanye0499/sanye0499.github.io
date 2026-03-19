@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台词提取器 · 剧本手稿</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;700&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap');
+
+  :root {
+    --paper: #f5f0e8;
+    --paper-dark: #ede6d3;
+    --paper-line: #c8bfa8;
+    --ink: #2c1810;
+    --ink-light: #5c4a3a;
+    --ink-faint: #a89880;
+    --red-mark: #b84040;
+    --hole-punch: #d4c9b5;
+    --shadow: rgba(44, 24, 16, 0.12);
+    --line-height: 2.2rem;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #2a2420;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Noto Serif SC', serif;
+    padding: 1.5rem 1.5rem;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(80,50,30,0.3) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(60,40,20,0.3) 0%, transparent 60%);
+  }
+
+  /* Title Bar */
+  .title-bar {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .title-bar h1 {
+    font-family: 'ZCOOL XiaoWei', serif;
+    color: #d4b896;
+    font-size: 1.6rem;
+    letter-spacing: 0.6em;
+    font-weight: 400;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .title-bar .subtitle {
+    color: #8a7060;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    margin-top: 0.4rem;
+  }
+
+  /* Main Layout */
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    width: 100%;
+    max-width: 1600px;
+  }
+
+  @media (max-width: 768px) {
+    .workspace { grid-template-columns: 1fr; }
+  }
+
+  /* Paper Sheet */
+  .paper-sheet {
+    position: relative;
+    background: var(--paper);
+    border-radius: 2px;
+    box-shadow:
+      0 1px 0 #fff8f0,
+      0 4px 6px var(--shadow),
+      0 12px 30px rgba(0,0,0,0.3),
+      inset 0 0 60px rgba(44,24,16,0.03);
+    min-height: 82vh;
+    overflow: hidden;
+  }
+
+  /* Paper texture overlay */
+  .paper-sheet::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Horizontal ruled lines */
+  .paper-sheet::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--line-height) - 1px),
+      var(--paper-line) calc(var(--line-height) - 1px),
+      var(--paper-line) var(--line-height)
+    );
+    background-position: 0 3.8rem;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Left margin red line */
+  .margin-line {
+    position: absolute;
+    left: 3.2rem;
+    top: 0;
+    bottom: 0;
+    width: 1.5px;
+    background: var(--red-mark);
+    opacity: 0.35;
+    z-index: 2;
+  }
+
+  /* Hole punches */
+  .holes {
+    position: absolute;
+    left: 0.9rem;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    z-index: 3;
+    gap: 0;
+  }
+  .hole {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--hole-punch);
+    border: 1px solid #b8ae9e;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.5);
+  }
+
+  /* Sheet Header */
+  .sheet-header {
+    position: relative;
+    z-index: 4;
+    padding: 1.2rem 1.4rem 0.8rem 4rem;
+    border-bottom: 1.5px solid var(--paper-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to bottom, rgba(210,195,170,0.15), transparent);
+  }
+  .sheet-label {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 1rem;
+    color: var(--ink-light);
+    letter-spacing: 0.3em;
+  }
+  .sheet-tag {
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.15em;
+    border: 1px solid var(--paper-line);
+    padding: 0.15rem 0.5rem;
+    border-radius: 2px;
+  }
+
+  /* Input area */
+  .input-area {
+    position: relative;
+    z-index: 4;
+    padding: 0.8rem 1.4rem 1rem 4rem;
+  }
+
+  .novel-textarea {
+    width: 100%;
+    min-height: 65vh;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.88rem;
+    line-height: var(--line-height);
+    color: var(--ink);
+    caret-color: var(--red-mark);
+    padding: 0;
+    letter-spacing: 0.02em;
+  }
+
+  .novel-textarea::placeholder {
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 0.82rem;
+    line-height: 1.8;
+  }
+
+  /* Extract button */
+  .btn-row {
+    position: relative;
+    z-index: 4;
+    padding: 0.8rem 1.4rem 1.4rem 4rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .extract-btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 0.55rem 1.8rem;
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.3em;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: all 0.2s;
+    box-shadow: 2px 2px 0 var(--ink-light);
+    position: relative;
+  }
+  .extract-btn:hover {
+    background: #1a0e08;
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--ink-light);
+  }
+  .extract-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--ink-light);
+  }
+
+  .clear-btn {
+    background: transparent;
+    color: var(--ink-faint);
+    border: 1px solid var(--paper-line);
+    padding: 0.55rem 1.2rem;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: all 0.2s;
+  }
+  .clear-btn:hover {
+    color: var(--ink-light);
+    border-color: var(--ink-faint);
+  }
+
+  .char-count {
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+  }
+
+  /* Output Sheet */
+  .output-content {
+    position: relative;
+    z-index: 4;
+    padding: 0.8rem 1.4rem 1.4rem 4rem;
+    min-height: 65vh;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 420px;
+    gap: 1rem;
+    color: var(--ink-faint);
+  }
+  .empty-icon {
+    font-size: 2.5rem;
+    opacity: 0.4;
+  }
+  .empty-text {
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    text-align: center;
+    line-height: 2;
+  }
+
+  /* Character sections */
+  .character-block {
+    margin-bottom: 1.6rem;
+    animation: fadeIn 0.4s ease forwards;
+    opacity: 0;
+  }
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  .character-name {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 0.82rem;
+    color: var(--red-mark);
+    letter-spacing: 0.35em;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .character-name::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--red-mark), transparent);
+    opacity: 0.3;
+  }
+  .char-badge {
+    display: inline-block;
+    background: var(--red-mark);
+    color: var(--paper);
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    letter-spacing: 0.1em;
+    border-radius: 1px;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+  }
+
+  .dialogue-line {
+    font-size: 0.87rem;
+    line-height: var(--line-height);
+    color: var(--ink);
+    padding-left: 0.8rem;
+    border-left: 2px solid var(--paper-line);
+    margin-bottom: 0.1rem;
+    letter-spacing: 0.02em;
+    position: relative;
+  }
+  .dialogue-line:hover {
+    border-left-color: var(--ink-faint);
+    background: rgba(44,24,16,0.02);
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    position: relative;
+    z-index: 4;
+    padding: 0.6rem 1.4rem 0 4rem;
+    display: flex;
+    gap: 1.5rem;
+    border-top: 1px solid var(--paper-line);
+  }
+  .stat-item {
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.15em;
+  }
+  .stat-item span {
+    color: var(--ink-light);
+    font-weight: 500;
+  }
+
+  /* Page number */
+  .page-num {
+    position: absolute;
+    bottom: 0.8rem;
+    right: 1.2rem;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.2em;
+    z-index: 4;
+  }
+
+  /* Corner fold */
+  .corner-fold {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 28px 28px;
+    border-color: transparent transparent var(--paper-dark) transparent;
+    z-index: 5;
+    filter: drop-shadow(-2px -2px 2px var(--shadow));
+  }
+
+  /* Scrollbar */
+  .novel-textarea::-webkit-scrollbar,
+  .output-content::-webkit-scrollbar { width: 4px; }
+  .novel-textarea::-webkit-scrollbar-track,
+  .output-content::-webkit-scrollbar-track { background: transparent; }
+  .novel-textarea::-webkit-scrollbar-thumb,
+  .output-content::-webkit-scrollbar-thumb { background: var(--paper-line); border-radius: 2px; }
+
+  .output-content { overflow-y: auto; max-height: 68vh; }
+
+  /* Stagger animation delays */
+  .character-block:nth-child(1) { animation-delay: 0.05s; }
+  .character-block:nth-child(2) { animation-delay: 0.1s; }
+  .character-block:nth-child(3) { animation-delay: 0.15s; }
+  .character-block:nth-child(4) { animation-delay: 0.2s; }
+  .character-block:nth-child(5) { animation-delay: 0.25s; }
+  .character-block:nth-child(n+6) { animation-delay: 0.3s; }
+
+  /* Divider */
+  .section-div {
+    text-align: center;
+    margin: 0.5rem 0 1rem;
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+    letter-spacing: 0.5em;
+  }
+
+  /* Export buttons */
+  .export-btns {
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .export-btn {
+    background: transparent;
+    color: var(--ink-light);
+    border: 1px solid var(--paper-line);
+    padding: 0.2rem 0.7rem;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: all 0.2s;
+  }
+  .export-btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+</style>
+</head>
+<body>
+
+<div class="title-bar">
+  <h1>台　词　手　稿</h1>
+  <p class="subtitle">DIALOGUE SCRIPT EXTRACTOR</p>
+</div>
+
+<div class="workspace">
+
+  <!-- LEFT: Input Sheet -->
+  <div class="paper-sheet" id="inputSheet">
+    <div class="margin-line"></div>
+    <div class="holes">
+      <div class="hole"></div>
+      <div class="hole"></div>
+      <div class="hole"></div>
+    </div>
+
+    <div class="sheet-header">
+      <span class="sheet-label">原　稿</span>
+      <span class="sheet-tag">MANUSCRIPT</span>
+    </div>
+
+    <div class="input-area">
+      <textarea 
+        class="novel-textarea" 
+        id="novelInput"
+        placeholder='在此粘贴您的小说原文……
+
+支持以下对话格式：
+「你好，我是小明。」
+"你好，我是小明。"
+小明说："你好。"
+小明："你好。"
+
+台词提取器将自动识别人物姓名与对话内容，过滤括号内的动作描写。'
+        oninput="updateCount()"
+        spellcheck="false"
+      ></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="extract-btn" onclick="extractDialogues()">提　取　台　词</button>
+      <button class="clear-btn" onclick="clearAll()">清　空</button>
+      <span class="char-count" id="charCount">0 字</span>
+    </div>
+
+    <div class="page-num">第一页</div>
+    <div class="corner-fold"></div>
+  </div>
+
+  <!-- RIGHT: Output Sheet -->
+  <div class="paper-sheet" id="outputSheet">
+    <div class="margin-line"></div>
+    <div class="holes">
+      <div class="hole"></div>
+      <div class="hole"></div>
+      <div class="hole"></div>
+    </div>
+
+    <div class="sheet-header">
+      <span class="sheet-label">台　词　稿</span>
+      <span class="sheet-tag">DIALOGUE SCRIPT</span>
+    </div>
+
+    <div class="stats-bar" id="statsBar" style="display:none">
+      <div class="stat-item">人物 <span id="charStat">0</span></div>
+      <div class="stat-item">台词 <span id="lineStat">0</span></div>
+      <div class="export-btns">
+        <button class="export-btn" onclick="exportTXT()">导出 TXT</button>
+        <button class="export-btn" onclick="exportCSV()">导出 CSV</button>
+      </div>
+    </div>
+
+    <div class="output-content" id="outputContent">
+      <div class="empty-state">
+        <div class="empty-icon">✎</div>
+        <div class="empty-text">
+          在左侧粘贴小说原文<br>
+          点击「提取台词」<br>
+          台词将按人物整理于此
+        </div>
+      </div>
+    </div>
+
+    <div class="page-num">第二页</div>
+    <div class="corner-fold"></div>
+  </div>
+
+</div>
+
+
+<script>
+  function updateCount() {
+    const text = document.getElementById('novelInput').value;
+    document.getElementById('charCount').textContent = text.length + ' 字';
+  }
+
+  function clearAll() {
+    document.getElementById('novelInput').value = '';
+    document.getElementById('charCount').textContent = '0 字';
+    document.getElementById('outputContent').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">✎</div>
+        <div class="empty-text">在左侧粘贴小说原文<br>点击「提取台词」<br>台词将按人物整理于此</div>
+      </div>`;
+    document.getElementById('statsBar').style.display = 'none';
+  }
+
+  function extractDialogues() {
+    const rawText = document.getElementById('novelInput').value.trim();
+    if (!rawText) return;
+
+    const OQ = '\u201c\u300c\u300e\u2018';
+    const CQ = '\u201d\u300d\u300f\u2019';
+    const SVERB = /[说道问答喊叫嚷哭笑叹吼嗤骂吟唱呼嘀]/;
+    const ACTION = /[抬低点摇皱眨扬挥伸迈转弯俯仰举放握捏抓拍停顿沉默凝望叹蹙收站走]/;
+
+    // Chars that cannot appear at a name boundary (position ≥2)
+    // i.e. if char[2] is in this set, name ends at char[1]
+    const NOT_NAME = new Set([
+      ...'说道问答喊叫嚷哭笑叹吼嗤骂吟唱呼嘀',
+      ...'回见抬低点摇皱眨扬挥伸迈转弯俯仰举放握捏抓拍停',
+      ...'犹豫闻听望瞧瞥视端凝盯瞪眯睁闭蹙颦噙含忍',
+      ...'想念思虑考觉感知晓明悟懂',
+      ...'收站走起坐躺跑跳跪拜拉推拽扯扔摔撞踢踩忽',
+    ]);
+
+    const REJECT = new Set([
+      '这','那','他','她','它','我','你','您','谁','何','此','彼','其',
+      '并','又','也','都','就','还','但','而','所','被','把','从','在','和','与','或',
+      '突然','忽然','随即','随后','于是','只是','只好','不禁','不由','仿佛','似乎',
+      '好像','原来','果然','已经','终于','其实','当然','大概','也许','可能','显然',
+      '居然','竟然','不过','然而','因此','所以','虽然','尽管','即使','无论','不管',
+      '微光','旧书','书摊','封面','封皮','笔记','书架','书籍',
+      '那本','这本','那个','这个','那种','这种','那些','这些',
+      '这时','那时','此时','后来','之后','然后','接着','多年','良久','片刻',
+    ]);
+
+    // Is this quoted content actual dialogue (speech), or narration/action?
+    // Returns false if content starts with [Name 2-3 chars][action verb]
+    function isDialogue(content) {
+      for (let nameLen = 2; nameLen <= 3; nameLen++) {
+        if (content.length <= nameLen) continue;
+        const charAfterName = content[nameLen];
+        if (/[\u4e00-\u9fff]/.test(charAfterName) && NOT_NAME.has(charAfterName)) {
+          const prefix = content.slice(0, nameLen);
+          if (/^[\u4e00-\u9fff]{2,}$/.test(prefix)) return false;
+        }
+      }
+      return true;
+    }
+
+    // If a quote is narration (not dialogue), extract the leading name as speaker
+    function speakerFromNarration(content) {
+      if (isDialogue(content)) return null;
+      let name = '';
+      for (const ch of content) {
+        if (!/[\u4e00-\u9fff]/.test(ch)) break;
+        if (NOT_NAME.has(ch) && name.length >= 2) break;
+        name += ch;
+        if (name.length >= 4) break;
+      }
+      if (name.length < 2) return null;
+      if (REJECT.has(name)) return null;
+      if (/^(他|她|它|我|你|您)/.test(name)) return null;
+      return name;
+    }
+
+    // Extract speaker name from beginning of a text segment
+    function extractName(str) {
+      const m = str.match(/^[\s，。！？\u201c\u201d\u300c\u300d]*([\u4e00-\u9fff]+)/);
+      if (!m) return null;
+      if (/^(他|她|它|我|你|您)(的|们)/.test(m[1])) return null;
+      let name = '';
+      for (const ch of m[1].slice(0, 5)) {
+        if (NOT_NAME.has(ch) && name.length >= 2) break;
+        name += ch;
+        if (name.length >= 4) break;
+      }
+      if (name.length < 2) return null;
+      if (REJECT.has(name)) return null;
+      return name;
+    }
+
+    function stripClutter(s) {
+      return s
+        .replace(/（[^）]{0,80}）/g, '')
+        .replace(/\([^)]{0,80}\)/g, '')
+        .replace(/【[^】]{0,80}】/g, '')
+        .replace(/\[[^\]]{0,80}\]/g, '')
+        .replace(new RegExp('^[\\s，。！？…—' + OQ + CQ + '"\']+|[\\s，。！？…—' + OQ + CQ + '"\']+$', 'g'), '')
+        .trim();
+    }
+
+    // Normalise ASCII straight quotes to curly (alternating open/close per line)
+    function normalizeQuotes(line) {
+      let result = '', open = false;
+      for (const ch of line) {
+        if (ch === '"') { result += open ? '\u201d' : '\u201c'; open = !open; }
+        else if (ch === "'") { result += open ? '\u2019' : '\u2018'; open = !open; }
+        else result += ch;
+      }
+      return result;
+    }
+
+    const dialogueMap = {};
+    const orderList = [];
+    const confirmed = new Set();
+    let lastSpeaker = null;
+    const unattributed = [];
+
+    function addLine(name, content, isConfirmed) {
+      const c = stripClutter(content);
+      if (!c || c.length < 2) return;
+      if (!dialogueMap[name]) { dialogueMap[name] = []; orderList.push(name); }
+      if (isConfirmed) { confirmed.add(name); lastSpeaker = name; }
+      if (!dialogueMap[name].includes(c)) dialogueMap[name].push(c);
+    }
+
+    const lines = rawText.split(/\n+/);
+
+    for (let li = 0; li < lines.length; li++) {
+      const rawLine = lines[li].trim();
+      if (!rawLine) continue;
+      // Skip scene/setting header lines: contain ｜ | · — markers with no quotes
+      if (/[|｜]/.test(rawLine) && !/[""\u201c\u201d\u300c\u300d]/.test(rawLine)) continue;
+      const tline = normalizeQuotes(rawLine);
+
+      // Find all quoted spans in this line
+      const quotes = [];
+      const qRe = new RegExp('[' + OQ + ']([^' + OQ + CQ + ']{1,400}?)[' + CQ + ']', 'g');
+      let m;
+      while ((m = qRe.exec(tline)) !== null) {
+        quotes.push({ content: m[1], start: m.index, end: m.index + m[0].length });
+      }
+      if (quotes.length === 0) continue;
+
+      // ── SPLIT DIALOGUE: 2 quotes with attribution middle ───────────
+      // e.g. "对了，"她说，"玄鸟神女……"
+      if (quotes.length >= 2) {
+        let handled = false;
+        for (let i = 0; i + 1 < quotes.length; i++) {
+          const q1 = quotes[i], q2 = quotes[i + 1];
+          const middle = tline.slice(q1.end, q2.start);
+          const name = extractName(middle);
+          if (name) {
+            // q1 might be narration (attribution), q2 is the actual speech
+            // OR both are speech fragments — include both if both are dialogue
+            if (!isDialogue(q1.content)) {
+              // q1 is narration/attribution → only use q2 as speech
+              const sp = speakerFromNarration(q1.content) || name;
+              addLine(sp, q2.content, true);
+            } else {
+              // Both are speech → combine
+              addLine(name, stripClutter(q1.content) + '……' + stripClutter(q2.content), true);
+            }
+            handled = true;
+            break;
+          }
+        }
+        if (handled) continue;
+      }
+
+      // ── SINGLE QUOTE (or unhandled multi-quote) ────────────────────
+      for (const q of quotes) {
+        const before = tline.slice(0, q.start);
+        const after  = tline.slice(q.end);
+
+        // If this quote is NARRATION (not dialogue), use it to set context speaker
+        // and look for speech in what follows
+        if (!isDialogue(q.content)) {
+          const narrationSpeaker = speakerFromNarration(q.content);
+          if (narrationSpeaker) {
+            // If there's orphan text after (unquoted speech), attribute it
+            const orphan = stripClutter(after);
+            if (orphan.length >= 2) {
+              addLine(narrationSpeaker, orphan, true);
+            } else {
+              // Just record this as the current speaker for subsequent lines
+              lastSpeaker = narrationSpeaker;
+              confirmed.add(narrationSpeaker);
+              if (!dialogueMap[narrationSpeaker]) { dialogueMap[narrationSpeaker] = []; orderList.push(narrationSpeaker); }
+            }
+          }
+          continue;
+        }
+
+        // Quote IS dialogue — find attribution
+
+        // Strategy A: speaker in clause BEFORE the quote
+        const clauseParts = before.split(/[。！？]/);
+        const lastClause = clauseParts[clauseParts.length - 1]
+          .replace(new RegExp('^[' + OQ + CQ + ']+'), '');
+        if (SVERB.test(lastClause) || /[：:]/.test(lastClause) || ACTION.test(lastClause)) {
+          const name = extractName(lastClause);
+          if (name) { addLine(name, q.content, true); continue; }
+        }
+
+        // Strategy B: speaker immediately AFTER close-quote
+        const postMatch = after.match(new RegExp('^[，,\u3001]?([\\u4e00-\\u9fff]+)'));
+        if (postMatch) {
+          const name = extractName(postMatch[1]);
+          if (name) {
+            // Peek at text right after the extracted name (not the full postMatch)
+            const nameStartIdx = after.indexOf(postMatch[1][0]);
+            const peekAfterName = after.slice(nameStartIdx + name.length, nameStartIdx + name.length + 15);
+            if (SVERB.test(peekAfterName) || ACTION.test(peekAfterName)) {
+              addLine(name, q.content, true); continue;
+            }
+          }
+        }
+
+        // Unattributed dialogue
+        unattributed.push({ li, content: q.content });
+      }
+    }
+
+    // Assign unattributed to lastSpeaker (consecutive speech convention)
+    for (const item of unattributed) {
+      if (lastSpeaker) {
+        addLine(lastSpeaker, item.content, false);
+      }
+    }
+
+    // Prune: remove unconfirmed names that are rare in text
+    for (const name of [...orderList]) {
+      if (!confirmed.has(name)) {
+        const freq = (rawText.match(new RegExp(name, 'g')) || []).length;
+        if (freq < 2) {
+          delete dialogueMap[name];
+          orderList.splice(orderList.indexOf(name), 1);
+        }
+      }
+    }
+    // Remove names with 0 lines after pruning
+    for (const name of [...orderList]) {
+      if (!dialogueMap[name] || dialogueMap[name].length === 0) {
+        delete dialogueMap[name];
+        orderList.splice(orderList.indexOf(name), 1);
+      }
+    }
+
+    // ── Render ──────────────────────────────────────────────────────
+    const outputEl = document.getElementById('outputContent');
+    const statsBar  = document.getElementById('statsBar');
+
+    if (orderList.length === 0) {
+      outputEl.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">\u2047</div>
+          <div class="empty-text">未识别到对话内容<br>请确保对话以引号包裹<br>支持 \u201c\u201d \u300c\u300d " " 等格式</div>
+        </div>`;
+      statsBar.style.display = 'none';
+      return;
+    }
+
+    let totalLines = 0, html = '';
+    for (const name of orderList) {
+      const ls = dialogueMap[name];
+      totalLines += ls.length;
+      html += `<div class="character-block">
+        <div class="character-name">${name}<span class="char-badge">${ls.length}句</span></div>
+        ${ls.map(l => `<div class="dialogue-line">${l}</div>`).join('')}
+      </div>`;
+    }
+    outputEl.innerHTML = html;
+    document.getElementById('charStat').textContent = orderList.length;
+    document.getElementById('lineStat').textContent = totalLines;
+    statsBar.style.display = 'flex';
+  }
+
+  document.getElementById('novelInput').addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'Enter') extractDialogues();
+  });
+
+  // ── Export helpers ────────────────────────────────────────────────
+  function getExportData() {
+    const blocks = document.querySelectorAll('.character-block');
+    const data = [];
+    blocks.forEach(block => {
+      const name = block.querySelector('.character-name').childNodes[0].textContent.trim();
+      const lines = [...block.querySelectorAll('.dialogue-line')].map(el => el.textContent.trim());
+      data.push({ name, lines });
+    });
+    return data;
+  }
+
+  function downloadFile(filename, content, mime) {
+    const blob = new Blob(['\uFEFF' + content], { type: mime + ';charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportTXT() {
+    const data = getExportData();
+    if (!data.length) return;
+    let out = '台　词　手　稿\n' + '═'.repeat(30) + '\n\n';
+    data.forEach(({ name, lines }) => {
+      out += `【${name}】\n`;
+      lines.forEach((l, i) => { out += `  ${i + 1}. ${l}\n`; });
+      out += '\n';
+    });
+    downloadFile('台词稿.txt', out, 'text/plain');
+  }
+
+  function exportCSV() {
+    const data = getExportData();
+    if (!data.length) return;
+    let out = '人物,序号,台词\n';
+    data.forEach(({ name, lines }) => {
+      lines.forEach((l, i) => {
+        const escaped = l.replace(/"/g, '""');
+        out += `"${name}",${i + 1},"${escaped}"\n`;
+      });
+    });
+    downloadFile('台词稿.csv', out, 'text/csv');
+  }
+</script>
+</body>
+</html>
