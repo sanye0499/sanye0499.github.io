@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✨ 少女漫画阅读器 ✨</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose: #f9a8d4;
+    --rose-light: #fce7f3;
+    --rose-deep: #ec4899;
+    --violet: #c084fc;
+    --violet-light: #ede9fe;
+    --violet-deep: #9333ea;
+    --lavender: #e9d5ff;
+    --peach: #fed7aa;
+    --cream: #fff9fb;
+    --ink: #4a1942;
+    --ink-soft: #7c3a70;
+    --ink-faint: #b06fa0;
+    --white: #ffffff;
+    --border: rgba(236, 72, 153, 0.2);
+    --shadow: rgba(192, 132, 252, 0.25);
+    --glass: rgba(255, 255, 255, 0.7);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--cream);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 10% 10%, rgba(249,168,212,0.35) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 90% 80%, rgba(192,132,252,0.3) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(253,215,170,0.15) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .sakura-bg {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0; overflow: hidden;
+  }
+
+  .petal {
+    position: absolute; font-size: 1.2rem; opacity: 0;
+    animation: fall linear infinite;
+  }
+
+  @keyframes fall {
+    0%   { transform: translateY(-40px) rotate(0deg); opacity: 0.7; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+  }
+
+  .app {
+    position: relative; z-index: 1;
+    display: grid; grid-template-rows: auto 1fr;
+    min-height: 100vh;
+  }
+
+  /* ─── Header ─── */
+  header {
+    background: linear-gradient(135deg, rgba(249,168,212,0.85) 0%, rgba(192,132,252,0.85) 100%);
+    backdrop-filter: blur(16px);
+    border-bottom: 2px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 24px var(--shadow);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+  .logo-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 6px rgba(192,132,252,0.5));
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+  .logo-text {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 1.4rem; color: var(--white);
+    text-shadow: 0 2px 8px rgba(147,51,234,0.4); letter-spacing: 2px;
+  }
+
+  .logo-sub { font-size: 0.65rem; color: rgba(255,255,255,0.85); letter-spacing: 1px; margin-top: 2px; }
+
+  .header-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  /* ─── Mode toggle ─── */
+  .mode-toggle {
+    display: flex;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50px;
+    padding: 3px;
+    gap: 2px;
+    border: 1.5px solid rgba(255,255,255,0.4);
+  }
+
+  .mode-btn {
+    padding: 5px 14px;
+    border: none;
+    border-radius: 50px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    color: rgba(255,255,255,0.85);
+    background: transparent;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .mode-btn.active {
+    background: white;
+    color: var(--violet-deep);
+    box-shadow: 0 2px 8px rgba(147,51,234,0.25);
+  }
+
+  /* ─── Buttons ─── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border: none; border-radius: 50px;
+    font-family: 'Noto Sans SC', sans-serif; font-size: 0.82rem;
+    cursor: pointer; transition: all 0.25s ease;
+    font-weight: 500; letter-spacing: 0.5px; white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--rose-deep), var(--violet-deep));
+    color: white; box-shadow: 0 4px 14px rgba(236,72,153,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236,72,153,0.5); }
+
+  .btn-ghost {
+    background: rgba(255,255,255,0.6); color: var(--ink);
+    border: 1.5px solid var(--border); backdrop-filter: blur(8px);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.9); transform: translateY(-1px); box-shadow: 0 4px 12px var(--shadow); }
+
+  .btn-icon {
+    width: 36px; height: 36px; padding: 0; justify-content: center;
+    background: rgba(255,255,255,0.6); border: 1.5px solid var(--border);
+    color: var(--ink); border-radius: 50%;
+  }
+  .btn-icon:hover { background: rgba(255,255,255,0.9); transform: scale(1.1); }
+
+  /* ─── Content layout: single vs dual ─── */
+  .content-area {
+    display: grid;
+    height: calc(100vh - 66px);
+    transition: grid-template-columns 0.4s ease;
+  }
+
+  /* Single mode */
+  .content-area.single-mode {
+    grid-template-columns: 280px 1fr;
+  }
+
+  /* Dual mode: hide classic sidebar, show two panes */
+  .content-area.dual-mode {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ─── Classic sidebar (single mode only) ─── */
+  .sidebar {
+    background: linear-gradient(180deg, rgba(253,215,170,0.4) 0%, rgba(249,168,212,0.3) 50%, rgba(192,132,252,0.3) 100%);
+    backdrop-filter: blur(12px);
+    border-right: 2px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .dual-mode .sidebar { display: none; }
+
+  .sidebar-header {
+    padding: 18px 20px 12px;
+    border-bottom: 1.5px dashed var(--border);
+    flex-shrink: 0;
+  }
+
+  .sidebar-title {
+    font-family: 'ZCOOL XiaoWei', serif; font-size: 1.05rem;
+    color: var(--ink); display: flex; align-items: center; gap: 6px;
+  }
+
+  .sidebar-meta { font-size: 0.72rem; color: var(--ink-faint); margin-top: 4px; padding-left: 2px; }
+
+  .toc-list {
+    flex: 1; overflow-y: auto; padding: 10px 12px;
+    scrollbar-width: thin; scrollbar-color: var(--rose) transparent;
+  }
+  .toc-list::-webkit-scrollbar { width: 4px; }
+  .toc-list::-webkit-scrollbar-thumb { background: var(--rose); border-radius: 4px; }
+
+  .volume-group { margin-bottom: 12px; }
+
+  .volume-label {
+    font-family: 'ZCOOL XiaoWei', serif; font-size: 0.82rem;
+    color: var(--violet-deep); padding: 6px 10px;
+    background: linear-gradient(90deg, rgba(192,132,252,0.2), transparent);
+    border-left: 3px solid var(--violet); border-radius: 0 8px 8px 0;
+    margin-bottom: 4px; letter-spacing: 0.5px;
+  }
+
+  .chapter-item {
+    padding: 8px 14px 8px 20px; font-size: 0.82rem;
+    color: var(--ink-soft); border-radius: 10px; cursor: pointer;
+    transition: all 0.2s; margin: 2px 0;
+    display: flex; align-items: center; gap: 6px; line-height: 1.4;
+  }
+
+  .chapter-item:hover { background: rgba(249,168,212,0.35); color: var(--ink); padding-left: 24px; }
+
+  .chapter-item.active {
+    background: linear-gradient(90deg, rgba(236,72,153,0.2), rgba(192,132,252,0.15));
+    color: var(--ink); font-weight: 500;
+    border-left: 3px solid var(--rose-deep); padding-left: 17px;
+  }
+
+  .chapter-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--rose); flex-shrink: 0;
+  }
+  .chapter-item.active .chapter-dot { background: var(--rose-deep); box-shadow: 0 0 6px var(--rose-deep); }
+
+  /* ─── DUAL PANE ─── */
+  .dual-pane-container {
+    display: contents; /* only shown in dual mode */
+  }
+
+  .single-mode .dual-pane-container { display: none; }
+  .dual-mode .dual-pane-container { display: contents; }
+
+  .book-pane {
+    display: flex; flex-direction: column; overflow: hidden;
+    position: relative;
+  }
+
+  .book-pane:first-of-type {
+    border-right: 2px solid var(--border);
+  }
+
+  /* Pane header */
+  .pane-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(90deg, rgba(249,168,212,0.35), rgba(192,132,252,0.25));
+    border-bottom: 1.5px solid var(--border);
+    flex-shrink: 0;
+    min-height: 48px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .book-pane:nth-child(2) .pane-header {
+    background: linear-gradient(90deg, rgba(192,132,252,0.25), rgba(253,215,170,0.3));
+  }
+
+  .pane-label {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 2px;
+    padding: 2px 10px; border-radius: 50px;
+    flex-shrink: 0;
+  }
+
+  .pane-label.left-label {
+    background: rgba(236,72,153,0.15); color: var(--rose-deep);
+    border: 1px solid rgba(236,72,153,0.25);
+  }
+
+  .pane-label.right-label {
+    background: rgba(147,51,234,0.12); color: var(--violet-deep);
+    border: 1px solid rgba(147,51,234,0.2);
+  }
+
+  .pane-book-title {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 0.88rem; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    flex: 1; min-width: 0;
+  }
+
+  .pane-progress {
+    font-size: 0.7rem; color: var(--ink-faint);
+    background: rgba(255,255,255,0.5);
+    padding: 2px 10px; border-radius: 50px;
+    border: 1px solid var(--border);
+    white-space: nowrap; flex-shrink: 0;
+  }
+
+  .pane-upload-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 12px; border: none; border-radius: 50px;
+    font-family: 'Noto Sans SC', sans-serif; font-size: 0.75rem;
+    cursor: pointer; transition: all 0.2s;
+    background: linear-gradient(135deg, var(--rose-deep), var(--violet-deep));
+    color: white; box-shadow: 0 2px 8px rgba(236,72,153,0.3);
+    flex-shrink: 0; white-space: nowrap;
+  }
+  .pane-upload-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(236,72,153,0.45); }
+
+  /* Pane TOC drawer */
+  .pane-toc-drawer {
+    position: absolute; top: 48px; left: 0; right: 0; bottom: 0;
+    background: rgba(255,249,251,0.97);
+    backdrop-filter: blur(12px);
+    z-index: 10; overflow-y: auto;
+    padding: 12px; transform: translateX(-102%);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    border-right: 2px solid var(--border);
+  }
+
+  .pane-toc-drawer.open { transform: translateX(0); }
+
+  .pane-toc-close {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .pane-toc-title {
+    font-family: 'ZCOOL XiaoWei', serif; font-size: 0.95rem; color: var(--ink);
+  }
+
+  /* Pane toolbar */
+  .pane-toolbar {
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(236,72,153,0.12);
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(8px);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .pane-font-ctrl {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 0.75rem; color: var(--ink-soft);
+  }
+
+  .pane-font-btn {
+    padding: 2px 8px; border: 1px solid var(--border);
+    border-radius: 20px; background: rgba(255,255,255,0.6);
+    cursor: pointer; font-size: 0.75rem; color: var(--ink);
+    transition: all 0.15s;
+  }
+
+  .pane-font-btn:hover { background: var(--rose-light); }
+
+  .pane-font-num { width: 28px; text-align: center; font-size: 0.8rem; color: var(--ink); font-weight: 600; }
+
+  /* Pane reading area */
+  .pane-reading {
+    flex: 1; overflow-y: auto; position: relative;
+    scrollbar-width: thin; scrollbar-color: var(--rose) transparent;
+  }
+
+  .pane-reading::-webkit-scrollbar { width: 5px; }
+  .pane-reading::-webkit-scrollbar-thumb { background: linear-gradient(var(--rose), var(--violet)); border-radius: 4px; }
+
+  /* Pane welcome screen */
+  .pane-welcome {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; padding: 32px 20px;
+    text-align: center; animation: fadeIn 0.5s ease;
+  }
+
+  .pane-welcome-art { font-size: 3.5rem; margin-bottom: 16px; animation: float 4s ease-in-out infinite; }
+
+  .pane-welcome-title {
+    font-family: 'ZCOOL XiaoWei', serif; font-size: 1.3rem;
+    color: var(--ink); margin-bottom: 8px; letter-spacing: 2px;
+  }
+
+  .pane-welcome-sub { font-size: 0.8rem; color: var(--ink-faint); line-height: 1.8; margin-bottom: 20px; }
+
+  .pane-upload-zone {
+    border: 2px dashed var(--rose-deep); border-radius: 18px;
+    padding: 28px 36px; background: rgba(255,255,255,0.6);
+    cursor: pointer; transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+  }
+
+  .pane-upload-zone:hover, .pane-upload-zone.drag-over {
+    background: rgba(249,168,212,0.2);
+    border-color: var(--violet-deep); transform: scale(1.02);
+    box-shadow: 0 6px 24px var(--shadow);
+  }
+
+  .pane-upload-zone .upload-icon { font-size: 2.2rem; margin-bottom: 8px; }
+  .pane-upload-zone .upload-text { font-family: 'ZCOOL XiaoWei', serif; font-size: 0.95rem; color: var(--ink); margin-bottom: 4px; }
+  .pane-upload-zone .upload-hint { font-size: 0.72rem; color: var(--ink-faint); }
+
+  /* Pane chapter content */
+  .pane-chapter-content {
+    padding: 28px 32px 48px;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .pane-chapter-header {
+    text-align: center; margin-bottom: 28px; padding-bottom: 18px;
+    border-bottom: 2px dashed var(--border);
+  }
+
+  .pane-chapter-volume-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--rose-light), var(--lavender));
+    border: 1.5px solid var(--border); border-radius: 50px;
+    padding: 2px 12px; font-size: 0.68rem; color: var(--violet-deep);
+    font-weight: 500; margin-bottom: 10px; letter-spacing: 1px;
+  }
+
+  .pane-chapter-title {
+    font-family: 'ZCOOL XiaoWei', serif; font-size: 1.3rem;
+    color: var(--ink); letter-spacing: 2px; line-height: 1.4; margin-bottom: 6px;
+  }
+
+  .pane-chapter-decor {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; color: var(--rose); font-size: 0.85rem; margin-top: 4px;
+  }
+
+  .pane-chapter-decor::before, .pane-chapter-decor::after {
+    content: ''; width: 40px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rose));
+  }
+  .pane-chapter-decor::after { background: linear-gradient(90deg, var(--rose), transparent); }
+
+  .pane-chapter-body {
+    line-height: 2; color: var(--ink-soft);
+    font-family: 'Noto Serif SC', serif; letter-spacing: 0.5px;
+  }
+
+  .pane-chapter-body p { margin-bottom: 1.2em; text-indent: 2em; }
+
+  .pane-chapter-body p:first-child::first-letter {
+    font-size: 2em; float: left; line-height: 1;
+    margin: 0 5px 0 0; color: var(--rose-deep);
+    font-family: 'ZCOOL XiaoWei', serif;
+    filter: drop-shadow(0 2px 4px rgba(236,72,153,0.3));
+  }
+
+  /* Pane nav */
+  .pane-chapter-nav {
+    display: flex; justify-content: space-between;
+    margin-top: 32px; padding-top: 20px;
+    border-top: 2px dashed var(--border);
+  }
+
+  .pane-nav-btn {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 2px; padding: 10px 14px;
+    background: rgba(255,255,255,0.7); border: 1.5px solid var(--border);
+    border-radius: 12px; cursor: pointer; transition: all 0.25s;
+    text-align: left; max-width: 160px; backdrop-filter: blur(6px);
+  }
+
+  .pane-nav-btn:hover { background: rgba(249,168,212,0.25); transform: translateX(-2px); box-shadow: 0 4px 14px var(--shadow); }
+  .pane-nav-btn.next { align-items: flex-end; text-align: right; }
+  .pane-nav-btn.next:hover { transform: translateX(2px); }
+
+  .pane-nav-label { font-size: 0.65rem; color: var(--ink-faint); }
+  .pane-nav-title { font-size: 0.75rem; color: var(--ink-soft); font-weight: 500; line-height: 1.3; }
+
+  /* ─── Divider between panes ─── */
+  .pane-divider {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--rose-deep), var(--violet-deep));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 14px;
+    box-shadow: 0 2px 12px var(--shadow);
+    pointer-events: none;
+  }
+
+  /* ─── Single mode reader (unchanged) ─── */
+  .single-reader-wrap {
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .dual-mode .single-reader-wrap { display: none; }
+
+  .reader-toolbar {
+    padding: 12px 24px; border-bottom: 1.5px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.6); backdrop-filter: blur(10px);
+    flex-shrink: 0; flex-wrap: wrap;
+  }
+
+  .toolbar-sep { width: 1px; height: 24px; background: var(--border); }
+
+  .font-size-ctrl { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--ink-soft); }
+
+  .font-size-num { width: 36px; text-align: center; font-weight: 600; color: var(--ink); font-size: 0.88rem; }
+
+  .progress-tag {
+    margin-left: auto; font-size: 0.75rem; color: var(--ink-faint);
+    background: rgba(249,168,212,0.2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 3px 12px;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  .reading-panel {
+    flex: 1; overflow-y: auto; padding: 0;
+    scrollbar-width: thin; scrollbar-color: var(--rose) transparent;
+    position: relative;
+  }
+
+  .reading-panel::-webkit-scrollbar { width: 6px; }
+  .reading-panel::-webkit-scrollbar-thumb { background: linear-gradient(var(--rose), var(--violet)); border-radius: 6px; }
+
+  /* Welcome screen */
+  .welcome {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 40px; text-align: center;
+    animation: fadeIn 0.6s ease; min-height: 100%;
+  }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+  .welcome-art { font-size: 5rem; margin-bottom: 20px; animation: float 4s ease-in-out infinite; filter: drop-shadow(0 6px 16px rgba(236,72,153,0.3)); }
+  .welcome-title { font-family: 'ZCOOL XiaoWei', serif; font-size: 2rem; color: var(--ink); margin-bottom: 8px; letter-spacing: 3px; }
+  .welcome-sub { color: var(--ink-faint); font-size: 0.9rem; margin-bottom: 36px; line-height: 1.8; }
+
+  .upload-zone {
+    border: 2.5px dashed var(--rose-deep); border-radius: 24px;
+    padding: 40px 60px; background: rgba(255,255,255,0.6);
+    cursor: pointer; transition: all 0.3s ease; position: relative; backdrop-filter: blur(8px);
+  }
+  .upload-zone:hover, .upload-zone.drag-over { background: rgba(249,168,212,0.25); border-color: var(--violet-deep); transform: scale(1.02); box-shadow: 0 8px 32px var(--shadow); }
+  .upload-icon { font-size: 3rem; margin-bottom: 12px; }
+  .upload-text { font-family: 'ZCOOL XiaoWei', serif; font-size: 1.1rem; color: var(--ink); margin-bottom: 6px; }
+  .upload-hint { font-size: 0.78rem; color: var(--ink-faint); }
+
+  input[type="file"] { display: none; }
+
+  .feature-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 28px; }
+  .pill { background: rgba(255,255,255,0.7); border: 1.5px solid var(--border); border-radius: 50px; padding: 5px 14px; font-size: 0.75rem; color: var(--ink-soft); backdrop-filter: blur(6px); }
+
+  .chapter-content { max-width: 780px; margin: 0 auto; padding: 40px 48px 60px; animation: fadeIn 0.4s ease; }
+  .chapter-header { text-align: center; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px dashed var(--border); }
+  .chapter-volume-tag { display: inline-block; background: linear-gradient(135deg, var(--rose-light), var(--lavender)); border: 1.5px solid var(--border); border-radius: 50px; padding: 3px 14px; font-size: 0.72rem; color: var(--violet-deep); font-weight: 500; margin-bottom: 12px; letter-spacing: 1px; }
+  .chapter-title-main { font-family: 'ZCOOL XiaoWei', serif; font-size: 1.7rem; color: var(--ink); letter-spacing: 3px; line-height: 1.4; margin-bottom: 8px; }
+  .chapter-decor { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--rose); font-size: 1rem; margin-top: 6px; }
+  .chapter-decor::before, .chapter-decor::after { content: ''; width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--rose)); }
+  .chapter-decor::after { background: linear-gradient(90deg, var(--rose), transparent); }
+  .chapter-body { line-height: 2; color: var(--ink-soft); font-size: 16px; font-family: 'Noto Serif SC', serif; letter-spacing: 0.5px; }
+  .chapter-body p { margin-bottom: 1.2em; text-indent: 2em; }
+  .chapter-body p:first-child::first-letter { font-size: 2em; float: left; line-height: 1; margin: 0 6px 0 0; color: var(--rose-deep); font-family: 'ZCOOL XiaoWei', serif; filter: drop-shadow(0 2px 4px rgba(236,72,153,0.3)); }
+  .chapter-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding-top: 24px; border-top: 2px dashed var(--border); }
+  .nav-chapter-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 12px 20px; background: rgba(255,255,255,0.7); border: 1.5px solid var(--border); border-radius: 16px; cursor: pointer; transition: all 0.25s; text-align: left; max-width: 220px; backdrop-filter: blur(8px); }
+  .nav-chapter-btn:hover { background: rgba(249,168,212,0.25); transform: translateX(-3px); box-shadow: 0 4px 16px var(--shadow); }
+  .nav-chapter-btn.next { align-items: flex-end; text-align: right; }
+  .nav-chapter-btn.next:hover { transform: translateX(3px); }
+  .nav-label { font-size: 0.7rem; color: var(--ink-faint); display: flex; align-items: center; gap: 4px; }
+  .nav-title { font-size: 0.82rem; color: var(--ink-soft); font-weight: 500; line-height: 1.3; }
+
+  /* Toast / Loading / Settings (unchanged) */
+  .toast {
+    position: fixed; bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: linear-gradient(135deg, var(--rose-deep), var(--violet-deep));
+    color: white; padding: 10px 22px; border-radius: 50px; font-size: 0.85rem;
+    z-index: 999; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 4px 20px rgba(147,51,234,0.4); white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(255,249,251,0.85);
+    backdrop-filter: blur(8px); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 200;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .loading-overlay.show { opacity: 1; pointer-events: all; }
+  .loading-spinner { font-size: 3rem; animation: spin 1.5s ease-in-out infinite; margin-bottom: 16px; }
+  @keyframes spin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+  .loading-text { font-family: 'ZCOOL XiaoWei', serif; font-size: 1.1rem; color: var(--ink-soft); letter-spacing: 2px; }
+
+  .settings-panel {
+    position: fixed; top: 80px; right: 20px; width: 220px;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(16px);
+    border: 1.5px solid var(--border); border-radius: 20px; padding: 18px;
+    z-index: 150; box-shadow: 0 8px 32px var(--shadow); display: none;
+    animation: slideDown 0.25s ease;
+  }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  .settings-panel.show { display: block; }
+  .settings-title { font-family: 'ZCOOL XiaoWei', serif; font-size: 0.95rem; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .settings-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 0.8rem; color: var(--ink-soft); }
+  .theme-swatches { display: flex; gap: 6px; }
+  .swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+  .swatch:hover, .swatch.active { transform: scale(1.2); border-color: var(--rose-deep); }
+  .range-input { width: 100%; -webkit-appearance: none; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--rose), var(--violet)); outline: none; margin-top: 6px; }
+  .range-input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: white; border: 2px solid var(--rose-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+
+  .sidebar-empty { padding: 30px 20px; text-align: center; color: var(--ink-faint); font-size: 0.82rem; line-height: 2; }
+
+  @media (max-width: 700px) {
+    .content-area.single-mode { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .sidebar.open { display: flex; position: fixed; left:0; top:66px; bottom:0; width:280px; z-index:90; }
+    .chapter-content { padding: 24px 20px 40px; }
+    .content-area.dual-mode { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    .book-pane:first-of-type { border-right: none; border-bottom: 2px solid var(--border); }
+    .pane-chapter-content { padding: 20px 16px 32px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sakura-bg" id="sakuraBg"></div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner">🌸</div>
+  <div class="loading-text" id="loadingText">正在解析文本，请稍候…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Settings panel -->
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-title">⚙️ 阅读设置</div>
+  <div class="settings-row"><span>📖 字号</span></div>
+  <input type="range" class="range-input" id="fontSizeRange" min="13" max="24" value="16">
+  <div class="settings-row" style="margin-top:12px;"><span>🌈 背景主题</span></div>
+  <div class="theme-swatches">
+    <div class="swatch active" style="background:linear-gradient(135deg,#fff9fb,#fce7f3)" data-theme="cream" title="少女粉"></div>
+    <div class="swatch" style="background:linear-gradient(135deg,#fefce8,#fef9c3)" data-theme="warm" title="暖黄护眼"></div>
+    <div class="swatch" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7)" data-theme="mint" title="薄荷清新"></div>
+    <div class="swatch" style="background:linear-gradient(135deg,#1e1b2e,#2d1b3e)" data-theme="dark" title="深夜模式"></div>
+  </div>
+  <div class="settings-row" style="margin-top:12px;"><span>💌 行距</span></div>
+  <input type="range" class="range-input" id="lineHeightRange" min="1.6" max="2.8" step="0.1" value="2">
+</div>
+
+<div class="app">
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📖</div>
+      <div>
+        <div class="logo-text">少女阅读</div>
+        <div class="logo-sub">✨ Shōjo Reader ✨</div>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <!-- Mode toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btnSingle" onclick="setMode('single')">📖 单书</button>
+        <button class="mode-btn" id="btnDual" onclick="setMode('dual')">📚 双栏对照</button>
+      </div>
+
+      <!-- Single-mode import button -->
+      <div id="singleImportArea">
+        <button class="btn btn-primary" onclick="document.getElementById('fileInputSingle').click()">
+          🌸 导入小说
+        </button>
+        <input type="file" id="fileInputSingle" accept=".txt" onchange="loadFile(event,'single')">
+      </div>
+
+      <button class="btn btn-icon" onclick="toggleSettings()" title="设置">⚙️</button>
+      <button class="btn btn-icon" id="btnSidebar" onclick="toggleSidebar()" title="目录">📋</button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div class="content-area single-mode" id="contentArea">
+
+    <!-- Classic sidebar (single mode) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">🌸 目录</div>
+        <div class="sidebar-meta" id="sidebarMeta">还没有导入小说哦～</div>
+      </div>
+      <div class="toc-list" id="tocList">
+        <div class="sidebar-empty">💕 快去导入一本喜欢的小说吧～<br><br>支持自动识别<br>卷 / 章 结构哦 ✨</div>
+      </div>
+    </aside>
+
+    <!-- Single-mode reader -->
+    <div class="single-reader-wrap" id="singleReaderWrap">
+      <div class="reader-toolbar" id="readerToolbar" style="display:none">
+        <div class="font-size-ctrl">
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:1rem" onclick="changeFontSize(-1)">A－</button>
+          <span class="font-size-num" id="fontSizeNum">16</span>
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:1rem" onclick="changeFontSize(1)">A＋</button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <span style="font-size:0.82rem;color:var(--ink-faint)" id="bookTitle">📚</span>
+        <div class="progress-tag" id="progressTag">
+          💫 <span id="progressText">第 1 / 1 章</span>
+        </div>
+      </div>
+      <div class="reading-panel" id="readingPanel">
+        <div class="welcome" id="welcomeScreen">
+          <div class="welcome-art">📚</div>
+          <div class="welcome-title">少女阅读器</div>
+          <div class="welcome-sub">导入你喜欢的小说 txt 文件<br>自动识别章节结构，开始阅读之旅 ✨</div>
+          <label class="upload-zone" id="uploadZone" for="fileInputSingle">
+            <div class="upload-icon">🌺</div>
+            <div class="upload-text">点击或拖拽 TXT 文件到这里</div>
+            <div class="upload-hint">支持 UTF-8 / GBK 编码</div>
+          </label>
+          <div class="feature-pills">
+            <span class="pill">🌸 自动分卷分章</span>
+            <span class="pill">🎀 记忆阅读进度</span>
+            <span class="pill">🌙 深夜护眼模式</span>
+            <span class="pill">💌 字体大小调节</span>
+            <span class="pill">📚 双书对照阅读</span>
+          </div>
+        </div>
+        <div class="chapter-content" id="chapterContent" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Dual pane container -->
+    <div class="dual-pane-container" id="dualPaneContainer" style="display:none">
+      <!-- Left pane -->
+      <div class="book-pane" id="paneLeft">
+        <div class="pane-header">
+          <span class="pane-label left-label">左 · 甲</span>
+          <span class="pane-book-title" id="paneTitleLeft">尚未导入书籍</span>
+          <span class="pane-progress" id="paneProgressLeft" style="display:none"></span>
+          <button class="pane-upload-btn" onclick="document.getElementById('fileInputLeft').click()">🌸 导入</button>
+          <input type="file" id="fileInputLeft" accept=".txt" onchange="loadFile(event,'left')">
+          <button class="pane-upload-btn" style="background:rgba(255,255,255,0.3);color:var(--ink);border:1px solid var(--border);box-shadow:none;" onclick="togglePaneTOC('left')" title="目录">📋</button>
+        </div>
+        <!-- TOC drawer -->
+        <div class="pane-toc-drawer" id="tocDrawerLeft">
+          <div class="pane-toc-close">
+            <span class="pane-toc-title">🌸 目录</span>
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem" onclick="togglePaneTOC('left')">收起</button>
+          </div>
+          <div id="tocListLeft"><div class="sidebar-empty">还没有导入书籍</div></div>
+        </div>
+        <!-- Font ctrl -->
+        <div class="pane-toolbar" id="paneToolbarLeft" style="display:none">
+          <div class="pane-font-ctrl">
+            <button class="pane-font-btn" onclick="changePaneFontSize('left',-1)">A－</button>
+            <span class="pane-font-num" id="paneFontLeft">16</span>
+            <button class="pane-font-btn" onclick="changePaneFontSize('left',1)">A＋</button>
+          </div>
+        </div>
+        <div class="pane-reading" id="readingLeft">
+          <div class="pane-welcome" id="welcomeLeft">
+            <div class="pane-welcome-art">🌸</div>
+            <div class="pane-welcome-title">导入左侧书籍</div>
+            <div class="pane-welcome-sub">点击上方「导入」按钮<br>选择 .txt 格式文件</div>
+            <label class="pane-upload-zone" for="fileInputLeft">
+              <div class="upload-icon">🌺</div>
+              <div class="upload-text">拖拽或点击导入</div>
+              <div class="upload-hint">UTF-8 / GBK 均可</div>
+            </label>
+          </div>
+          <div id="contentLeft" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Right pane -->
+      <div class="book-pane" id="paneRight">
+        <div class="pane-header">
+          <span class="pane-label right-label">右 · 乙</span>
+          <span class="pane-book-title" id="paneTitleRight">尚未导入书籍</span>
+          <span class="pane-progress" id="paneProgressRight" style="display:none"></span>
+          <button class="pane-upload-btn" onclick="document.getElementById('fileInputRight').click()">🌸 导入</button>
+          <input type="file" id="fileInputRight" accept=".txt" onchange="loadFile(event,'right')">
+          <button class="pane-upload-btn" style="background:rgba(255,255,255,0.3);color:var(--ink);border:1px solid var(--border);box-shadow:none;" onclick="togglePaneTOC('right')" title="目录">📋</button>
+        </div>
+        <div class="pane-toc-drawer" id="tocDrawerRight">
+          <div class="pane-toc-close">
+            <span class="pane-toc-title">🌸 目录</span>
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem" onclick="togglePaneTOC('right')">收起</button>
+          </div>
+          <div id="tocListRight"><div class="sidebar-empty">还没有导入书籍</div></div>
+        </div>
+        <div class="pane-toolbar" id="paneToolbarRight" style="display:none">
+          <div class="pane-font-ctrl">
+            <button class="pane-font-btn" onclick="changePaneFontSize('right',-1)">A－</button>
+            <span class="pane-font-num" id="paneFontRight">16</span>
+            <button class="pane-font-btn" onclick="changePaneFontSize('right',1)">A＋</button>
+          </div>
+        </div>
+        <div class="pane-reading" id="readingRight">
+          <div class="pane-welcome" id="welcomeRight">
+            <div class="pane-welcome-art">💜</div>
+            <div class="pane-welcome-title">导入右侧书籍</div>
+            <div class="pane-welcome-sub">支持与左栏不同的书籍<br>方便对照阅读两本书</div>
+            <label class="pane-upload-zone" for="fileInputRight">
+              <div class="upload-icon">🌷</div>
+              <div class="upload-text">拖拽或点击导入</div>
+              <div class="upload-hint">UTF-8 / GBK 均可</div>
+            </label>
+          </div>
+          <div id="contentRight" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end content-area -->
+</div><!-- end app -->
+
+<script>
+// ─── State ───────────────────────────────────────────────
+let state = {
+  chapters: [], currentChapter: 0,
+  fontSize: 16, lineHeight: 2, theme: 'cream'
+};
+
+let paneState = {
+  left:  { chapters: [], currentChapter: 0, fontSize: 16, bookName: '' },
+  right: { chapters: [], currentChapter: 0, fontSize: 16, bookName: '' }
+};
+
+let appMode = 'single'; // 'single' | 'dual'
+
+// ─── Mode switch ─────────────────────────────────────────
+function setMode(mode) {
+  appMode = mode;
+  const ca = document.getElementById('contentArea');
+  const dp = document.getElementById('dualPaneContainer');
+  const singleImport = document.getElementById('singleImportArea');
+  const btnSidebar = document.getElementById('btnSidebar');
+
+  document.getElementById('btnSingle').classList.toggle('active', mode === 'single');
+  document.getElementById('btnDual').classList.toggle('active', mode === 'dual');
+
+  if (mode === 'single') {
+    ca.className = 'content-area single-mode';
+    dp.style.display = 'none';
+    singleImport.style.display = '';
+    btnSidebar.style.display = '';
+  } else {
+    ca.className = 'content-area dual-mode';
+    dp.style.display = 'contents';
+    singleImport.style.display = 'none';
+    btnSidebar.style.display = 'none';
+  }
+}
+
+// ─── Sakura petals ───────────────────────────────────────
+const petals = ['🌸','🌺','🌷','💮','🌼','✿','❀'];
+const bg = document.getElementById('sakuraBg');
+for (let i = 0; i < 18; i++) {
+  const el = document.createElement('div');
+  el.className = 'petal';
+  el.textContent = petals[Math.floor(Math.random() * petals.length)];
+  el.style.left = Math.random() * 100 + 'vw';
+  el.style.fontSize = (0.7 + Math.random() * 1.2) + 'rem';
+  el.style.animationDuration = (8 + Math.random() * 14) + 's';
+  el.style.animationDelay = (Math.random() * 15) + 's';
+  bg.appendChild(el);
+}
+
+// ─── Drag & drop (single) ────────────────────────────────
+const uploadZone = document.getElementById('uploadZone');
+if (uploadZone) {
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault(); uploadZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.txt')) loadFile({ target: { files: [file] } }, 'single');
+    else showToast('❌ 请拖入 .txt 格式的文件哦！');
+  });
+}
+
+// Drag & drop for panes
+['Left','Right'].forEach(side => {
+  const zone = document.querySelector(`#pane${side} .pane-upload-zone`);
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.txt')) loadFile({ target: { files: [file] } }, side.toLowerCase());
+    else showToast('❌ 请拖入 .txt 格式的文件哦！');
+  });
+});
+
+// ─── File loading ────────────────────────────────────────
+function loadFile(event, target) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showLoading(true, `正在解析《${file.name.replace(/\.txt$/i,'')}》…`);
+
+  const readerUtf = new FileReader();
+  readerUtf.onload = e => {
+    let text = e.target.result;
+    if (text.includes('?') && text.includes('??')) {
+      const readerGbk = new FileReader();
+      readerGbk.onload = e2 => processText(e2.target.result, file.name, target);
+      readerGbk.readAsText(file, 'GBK');
+    } else {
+      processText(text, file.name, target);
+    }
+  };
+  readerUtf.readAsText(file, 'UTF-8');
+}
+
+// ─── Parse chapters ──────────────────────────────────────
+function processText(text, filename, target) {
+  setTimeout(() => {
+    const bookName = filename.replace(/\.txt$/i, '');
+    const lines = text.split(/\r?\n/);
+    const chapters = [];
+    const volPat  = /^(第[零一二三四五六七八九十百千0-9]+[卷部册篇集][\s\S]*|卷[零一二三四五六七八九十百千0-9]+[\s\S]*|【[^】]+[卷部]】|Volume\s+\d+)/;
+    const chapPat = /^(第[零一二三四五六七八九十百千0-9]+[章节回话][\s\S]*|Chapter\s+\d+[\s\S]*|【[^】]*】|[0-9]+[\.、。]\s*.{2,}|[一二三四五六七八九十百千]+、.{2,})/;
+
+    let currentVol = '', currentChap = null, chapIdx = 0;
+    const flush = () => {
+      if (currentChap) {
+        currentChap.content = currentChap.content.trim();
+        if (currentChap.content || chapters.length === 0)
+          chapters.push({ ...currentChap, idx: chapIdx++ });
+      }
+    };
+
+    for (const raw of lines) {
+      const line = raw.trim();
+      if (!line) { if (currentChap) currentChap.content += '\n'; continue; }
+      if (volPat.test(line)) {
+        flush(); currentVol = line;
+        currentChap = { volumeTitle: currentVol, title: currentVol, content: '' };
+      } else if (chapPat.test(line) && line.length < 80) {
+        flush();
+        currentChap = { volumeTitle: currentVol, title: line, content: '' };
+      } else {
+        if (!currentChap) currentChap = { volumeTitle: '', title: bookName + ' · 正文', content: '' };
+        currentChap.content += line + '\n';
+      }
+    }
+    flush();
+
+    if (chapters.length === 0 || (chapters.length === 1 && chapters[0].title === bookName + ' · 正文')) {
+      const allText = text.trim(); const CHUNK = 2000; chapters.length = 0;
+      for (let i = 0; i < allText.length; i += CHUNK)
+        chapters.push({ volumeTitle:'', title:`第 ${Math.floor(i/CHUNK)+1} 页`, content: allText.slice(i,i+CHUNK), idx: Math.floor(i/CHUNK) });
+    }
+
+    if (target === 'single') {
+      state.chapters = chapters; state.currentChapter = 0;
+      buildTOC(bookName); renderChapter(0);
+    } else {
+      paneState[target].chapters = chapters;
+      paneState[target].currentChapter = 0;
+      paneState[target].bookName = bookName;
+      buildPaneTOC(target, bookName);
+      renderPaneChapter(target, 0);
+    }
+
+    showLoading(false);
+    showToast(`🎀 《${bookName}》导入成功！共 ${chapters.length} 章`);
+  }, 400);
+}
+
+// ─── Single mode TOC ─────────────────────────────────────
+function buildTOC(bookName) {
+  const list = document.getElementById('tocList');
+  document.getElementById('sidebarMeta').textContent = `📚 ${bookName} · ${state.chapters.length} 章`;
+  document.getElementById('bookTitle').textContent = `📚 ${bookName}`;
+  list.innerHTML = '';
+  let lastVol = null, volGroup = null;
+  state.chapters.forEach((ch, i) => {
+    if (ch.volumeTitle && ch.volumeTitle !== lastVol) {
+      volGroup = document.createElement('div'); volGroup.className = 'volume-group';
+      const vl = document.createElement('div'); vl.className = 'volume-label';
+      vl.textContent = '📔 ' + ch.volumeTitle; volGroup.appendChild(vl);
+      list.appendChild(volGroup); lastVol = ch.volumeTitle;
+    }
+    const item = document.createElement('div');
+    item.className = 'chapter-item' + (i === 0 ? ' active' : '');
+    item.innerHTML = `<span class="chapter-dot"></span>${ch.title}`;
+    item.dataset.idx = i;
+    item.addEventListener('click', () => { renderChapter(i); if (window.innerWidth < 700) toggleSidebar(); });
+    (volGroup || list).appendChild(item);
+  });
+  document.getElementById('readerToolbar').style.display = 'flex';
+}
+
+function renderChapter(idx) {
+  if (idx < 0 || idx >= state.chapters.length) return;
+  state.currentChapter = idx;
+  const ch = state.chapters[idx];
+  document.querySelectorAll('#tocList .chapter-item').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.idx) === idx);
+    if (parseInt(el.dataset.idx) === idx) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+  document.getElementById('progressText').textContent = `第 ${idx+1} / ${state.chapters.length} 章`;
+  const paragraphs = ch.content.split(/\n+/).filter(Boolean).map(p => `<p>${escHtml(p)}</p>`).join('');
+  const prevCh = state.chapters[idx-1], nextCh = state.chapters[idx+1];
+  const navPrev = prevCh ? `<button class="nav-chapter-btn" onclick="renderChapter(${idx-1})"><span class="nav-label">⬅️ 上一章</span><span class="nav-title">${escHtml(prevCh.title)}</span></button>` : '<div></div>';
+  const navNext = nextCh ? `<button class="nav-chapter-btn next" onclick="renderChapter(${idx+1})"><span class="nav-label">下一章 ➡️</span><span class="nav-title">${escHtml(nextCh.title)}</span></button>` : '<div></div>';
+  document.getElementById('welcomeScreen').style.display = 'none';
+  const cc = document.getElementById('chapterContent');
+  cc.style.display = 'block';
+  cc.innerHTML = `
+    <div class="chapter-header">
+      ${ch.volumeTitle ? `<div class="chapter-volume-tag">📔 ${escHtml(ch.volumeTitle)}</div>` : ''}
+      <div class="chapter-title-main">${escHtml(ch.title)}</div>
+      <div class="chapter-decor">🌸</div>
+    </div>
+    <div class="chapter-body" id="chapterBody" style="font-size:${state.fontSize}px;line-height:${state.lineHeight}">
+      ${paragraphs || '<p style="color:var(--ink-faint);text-align:center;text-indent:0">（本章暂无内容）</p>'}
+    </div>
+    <div class="chapter-nav">${navPrev}${navNext}</div>`;
+  document.getElementById('readingPanel').scrollTop = 0;
+  document.getElementById('fontSizeNum').textContent = state.fontSize;
+}
+
+// ─── Pane TOC ────────────────────────────────────────────
+function buildPaneTOC(side, bookName) {
+  const listEl = document.getElementById(`tocList${cap(side)}`);
+  listEl.innerHTML = '';
+  const ps = paneState[side];
+  let lastVol = null, volGroup = null;
+
+  ps.chapters.forEach((ch, i) => {
+    if (ch.volumeTitle && ch.volumeTitle !== lastVol) {
+      volGroup = document.createElement('div'); volGroup.className = 'volume-group';
+      const vl = document.createElement('div'); vl.className = 'volume-label';
+      vl.textContent = '📔 ' + ch.volumeTitle; volGroup.appendChild(vl);
+      listEl.appendChild(volGroup); lastVol = ch.volumeTitle;
+    }
+    const item = document.createElement('div');
+    item.className = 'chapter-item' + (i === 0 ? ' active' : '');
+    item.innerHTML = `<span class="chapter-dot"></span>${ch.title}`;
+    item.dataset.idx = i;
+    item.addEventListener('click', () => {
+      renderPaneChapter(side, i);
+      togglePaneTOC(side); // close drawer
+    });
+    (volGroup || listEl).appendChild(item);
+  });
+
+  document.getElementById(`paneTitle${cap(side)}`).textContent = `📚 ${bookName} · ${ps.chapters.length}章`;
+  document.getElementById(`paneProgress${cap(side)}`).style.display = '';
+  document.getElementById(`paneToolbar${cap(side)}`).style.display = 'flex';
+}
+
+function renderPaneChapter(side, idx) {
+  const ps = paneState[side];
+  if (idx < 0 || idx >= ps.chapters.length) return;
+  ps.currentChapter = idx;
+  const ch = ps.chapters[idx];
+  const sideC = cap(side);
+
+  // Update TOC active
+  document.querySelectorAll(`#tocList${sideC} .chapter-item`).forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.idx) === idx);
+    if (parseInt(el.dataset.idx) === idx) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+
+  // Update progress
+  const prog = document.getElementById(`paneProgress${sideC}`);
+  if (prog) prog.textContent = `💫 ${idx+1} / ${ps.chapters.length} 章`;
+
+  const paragraphs = ch.content.split(/\n+/).filter(Boolean).map(p => `<p>${escHtml(p)}</p>`).join('');
+  const prevCh = ps.chapters[idx-1], nextCh = ps.chapters[idx+1];
+
+  const navPrev = prevCh ? `<button class="pane-nav-btn" onclick="renderPaneChapter('${side}',${idx-1})"><span class="pane-nav-label">⬅️ 上一章</span><span class="pane-nav-title">${escHtml(prevCh.title)}</span></button>` : '<div></div>';
+  const navNext = nextCh ? `<button class="pane-nav-btn next" onclick="renderPaneChapter('${side}',${idx+1})"><span class="pane-nav-label">下一章 ➡️</span><span class="pane-nav-title">${escHtml(nextCh.title)}</span></button>` : '<div></div>';
+
+  document.getElementById(`welcome${sideC}`).style.display = 'none';
+  const cc = document.getElementById(`content${sideC}`);
+  cc.style.display = 'block';
+  cc.innerHTML = `
+    <div class="pane-chapter-content">
+      <div class="pane-chapter-header">
+        ${ch.volumeTitle ? `<div class="pane-chapter-volume-tag">📔 ${escHtml(ch.volumeTitle)}</div>` : ''}
+        <div class="pane-chapter-title">${escHtml(ch.title)}</div>
+        <div class="pane-chapter-decor">🌸</div>
+      </div>
+      <div class="pane-chapter-body" id="paneBody${sideC}" style="font-size:${ps.fontSize}px;line-height:${state.lineHeight}">
+        ${paragraphs || '<p style="color:var(--ink-faint);text-align:center;text-indent:0">（本章暂无内容）</p>'}
+      </div>
+      <div class="pane-chapter-nav">${navPrev}${navNext}</div>
+    </div>`;
+
+  document.getElementById(`reading${sideC}`).scrollTop = 0;
+}
+
+function togglePaneTOC(side) {
+  document.getElementById(`tocDrawer${cap(side)}`).classList.toggle('open');
+}
+
+function changePaneFontSize(side, delta) {
+  const ps = paneState[side];
+  ps.fontSize = Math.min(24, Math.max(13, ps.fontSize + delta));
+  document.getElementById(`paneFont${cap(side)}`).textContent = ps.fontSize;
+  const body = document.getElementById(`paneBody${cap(side)}`);
+  if (body) body.style.fontSize = ps.fontSize + 'px';
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ─── Single font/style ───────────────────────────────────
+function changeFontSize(delta) {
+  state.fontSize = Math.min(24, Math.max(13, state.fontSize + delta));
+  applyTextStyle();
+  document.getElementById('fontSizeNum').textContent = state.fontSize;
+  document.getElementById('fontSizeRange').value = state.fontSize;
+}
+
+function applyTextStyle() {
+  const body = document.getElementById('chapterBody');
+  if (body) { body.style.fontSize = state.fontSize + 'px'; body.style.lineHeight = state.lineHeight; }
+}
+
+// ─── Settings ────────────────────────────────────────────
+function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('show'); }
+
+document.getElementById('fontSizeRange').addEventListener('input', e => {
+  state.fontSize = parseInt(e.target.value);
+  document.getElementById('fontSizeNum').textContent = state.fontSize;
+  applyTextStyle();
+});
+
+document.getElementById('lineHeightRange').addEventListener('input', e => {
+  state.lineHeight = parseFloat(e.target.value);
+  applyTextStyle();
+  // also update pane bodies
+  ['Left','Right'].forEach(s => {
+    const b = document.getElementById(`paneBody${s}`);
+    if (b) b.style.lineHeight = state.lineHeight;
+  });
+});
+
+const themes = {
+  cream: { '--cream':'#fff9fb','--ink':'#4a1942','--ink-soft':'#7c3a70' },
+  warm:  { '--cream':'#fefce8','--ink':'#451a03','--ink-soft':'#92400e' },
+  mint:  { '--cream':'#f0fdf4','--ink':'#14532d','--ink-soft':'#166534' },
+  dark:  { '--cream':'#1e1b2e','--ink':'#f3e8ff','--ink-soft':'#e9d5ff' }
+};
+
+document.querySelectorAll('.swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    const t = themes[sw.dataset.theme];
+    if (t) Object.entries(t).forEach(([k,v]) => document.documentElement.style.setProperty(k,v));
+    state.theme = sw.dataset.theme;
+  });
+});
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+document.addEventListener('click', e => {
+  const panel = document.getElementById('settingsPanel');
+  if (panel.classList.contains('show') && !panel.contains(e.target) && !e.target.closest('[onclick="toggleSettings()"]'))
+    panel.classList.remove('show');
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg;
+  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showLoading(show, msg) {
+  document.getElementById('loadingOverlay').classList.toggle('show', show);
+  if (msg) document.getElementById('loadingText').textContent = msg;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.addEventListener('keydown', e => {
+  if (appMode === 'single') {
+    if (!state.chapters.length) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') renderChapter(state.currentChapter + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   renderChapter(state.currentChapter - 1);
+  }
+});
+</script>
+</body>
+</html>
